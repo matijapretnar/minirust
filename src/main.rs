@@ -1,23 +1,25 @@
-use std::collections::HashMap;
+mod state {
+    use std::collections::HashMap;
 
-struct StackFrame {
-    variables: HashMap<String, i32>,
-}
+    pub struct StackFrame {
+        variables: HashMap<String, i32>,
+    }
 
-impl StackFrame {
-    fn new() -> Self {
-        StackFrame {
-            variables: HashMap::new(),
+    impl StackFrame {
+        pub fn new() -> Self {
+            StackFrame {
+                variables: HashMap::new(),
+            }
         }
-    }
-    fn read_variable(&self, x: &String) -> i32 {
-        match self.variables.get(x) {
-            Some(v) => *v,
-            None => 0,
+        pub fn read_variable(&self, x: &String) -> i32 {
+            match self.variables.get(x) {
+                Some(v) => *v,
+                None => 0,
+            }
         }
-    }
-    fn set_variable(&mut self, x: String, v: i32) {
-        self.variables.insert(x, v);
+        pub fn set_variable(&mut self, x: String, v: i32) {
+            self.variables.insert(x, v);
+        }
     }
 }
 
@@ -49,7 +51,7 @@ enum Expr {
 }
 
 impl Expr {
-    fn eval(&self, frame: &StackFrame) -> i32 {
+    fn eval(&self, frame: &state::StackFrame) -> i32 {
         match self {
             Expr::Var(x) => frame.read_variable(x),
             Expr::Const(n) => *n,
@@ -73,7 +75,7 @@ enum Statement {
 }
 
 impl Statement {
-    fn run(&self, frame: &mut StackFrame) {
+    fn run(&self, frame: &mut crate::state::StackFrame) {
         match self {
             Statement::Assign(x, expr) => {
                 let v = expr.eval(frame);
@@ -102,7 +104,7 @@ impl Statement {
 }
 
 fn main() {
-    let mut frame = StackFrame::new();
+    let mut frame = state::StackFrame::new();
     frame.set_variable(String::from("x"), 7);
     let expr = Expr::BinOp(
         BinOp::Mul,
