@@ -77,3 +77,26 @@ impl Statement {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state;
+
+    fn prazno_okolje() -> state::StackFrame {
+        let mut frame = state::StackFrame::new();
+        frame.set_variable(String::from("x"), 7);
+        frame
+    }
+    #[test]
+    fn pravi_odgovor() {
+        let frame = prazno_okolje();
+        let expr = Expr::BinOp(
+            BinOp::Mul,
+            Box::new(Expr::Const(6)),
+            Box::new(Expr::Var(String::from("x"))),
+        );
+        let result = expr.eval(&frame);
+        assert_eq!(result, 42);
+    }
+}
