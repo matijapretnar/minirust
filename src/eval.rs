@@ -90,14 +90,16 @@ mod tests {
     use super::*;
     use crate::state;
 
-    fn prazno_okolje() -> state::StackFrame {
+    fn new_frame(bindings: Vec<(&str, i32)>) -> state::StackFrame {
         let mut frame = state::StackFrame::new();
-        frame.set_variable(String::from("x"), 7);
+        for (x, v) in bindings {
+            frame.set_variable(String::from(x), v);
+        }
         frame
     }
     #[test]
-    fn pravi_odgovor() {
-        let frame = prazno_okolje();
+    fn answer_expression() {
+        let frame = new_frame(vec![("x", 7)]);
         let expr = Expr::BinOp(
             BinOp::Mul,
             Box::new(Expr::Const(6)),
@@ -105,5 +107,29 @@ mod tests {
         );
         let result = expr.eval(&frame);
         assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn countdown_statement() {
+        let mut frame = new_frame(vec![("x", 10)]);
+        let stmt = Statement::While(
+            Expr::Var(String::from("x")),
+            Box::new(Statement::Seq(
+                Box::new(Statement::Print(Expr::Var(String::from("x")))),
+                Box::new(Statement::Assign(
+                    String::from("x"),
+                    Expr::BinOp(
+                        BinOp::Sub,
+                        Box::new(Expr::Var(String::from("x"))),
+                        Box::new(Expr::Const(1)),
+                    ),
+                )),
+            )),
+        );
+        let output = stmt.run(&mut frame);
+        assert_eq!(
+            output.printouts,
+            vec!["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
+        )
     }
 }
