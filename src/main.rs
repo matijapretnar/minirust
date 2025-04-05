@@ -20,5 +20,6 @@ fn main() {
             )),
         )),
     );
-    stmt.run(&mut frame);
+    let output = stmt.run(&mut frame);
+    println!("{}", output.printouts.join("\n"))
 }

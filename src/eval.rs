@@ -1,4 +1,27 @@
 use crate::syntax::{BinOp, Expr, Statement};
+
+pub struct Output {
+    pub printouts: Vec<String>,
+}
+
+impl Output {
+    pub fn new() -> Self {
+        Output {
+            printouts: Vec::new(),
+        }
+    }
+    pub fn join(self, other: Self) -> Self {
+        let mut printouts = self.printouts;
+        printouts.extend(other.printouts);
+        Output { printouts }
+    }
+    pub fn print(output: String) -> Self {
+        Output {
+            printouts: vec![output],
+        }
+    }
+}
+
 impl BinOp {
     pub fn eval(&self, m: i32, n: i32) -> i32 {
         match self {
@@ -29,29 +52,34 @@ impl Expr {
 }
 
 impl Statement {
-    pub fn run(&self, frame: &mut crate::state::StackFrame) {
+    fn pass() -> Output {
+        Output::new()
+    }
+    fn seq(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame) -> Output {
+        let out1 = stmt1.run(frame);
+        // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
+        let out2 = stmt2.run(frame);
+        out1.join(out2)
+    }
+    pub fn run(&self, frame: &mut crate::state::StackFrame) -> Output {
         match self {
             Statement::Assign(x, expr) => {
                 let v = expr.eval(frame);
                 frame.set_variable(x.clone(), v);
+                Self::pass()
             }
             Statement::While(expr, stmt) => {
                 let v = expr.eval(frame);
                 if v != 0 {
-                    stmt.run(frame);
-                    // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
-                    self.run(frame)
+                    Self::seq(stmt, self, frame)
+                } else {
+                    Self::pass()
                 }
             }
-            Statement::Seq(stmt1, stmt2) => {
-                stmt1.run(frame);
-                // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
-                stmt2.run(frame)
-            }
+            Statement::Seq(stmt1, stmt2) => Self::seq(stmt1, stmt2, frame),
             Statement::Print(expr) => {
                 let v = expr.eval(frame);
-                // TODO: to bo treba spremeniti, ko bomo imeli vmesnik, ki ni konzola
-                println!("{v}")
+                Output::print(format!("{v}"))
             }
         }
     }
