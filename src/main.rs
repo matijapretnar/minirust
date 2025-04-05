@@ -1,3 +1,4 @@
+mod eval;
 mod state;
 mod syntax;
 
@@ -5,7 +6,7 @@ fn main() {
     use syntax::{BinOp, Expr, Statement};
     let mut frame = state::StackFrame::new();
     frame.set_variable(String::from("x"), 10);
-let stmt = Statement::While(
+    let stmt = Statement::While(
         Expr::Var(String::from("x")),
         Box::new(Statement::Seq(
             Box::new(Statement::Print(Expr::Var(String::from("x")))),
