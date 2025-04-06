@@ -38,8 +38,8 @@ impl Expr {
     pub fn eval(&self, frame: &crate::state::StackFrame) -> i32 {
         match self {
             Expr::Var(x) => frame.read_variable(x),
-            Expr::Const(n) => *n,
-            Expr::If(expr, expr1, expr2) => {
+            Expr::Constant(n) => *n,
+            Expr::IfThenElse(expr, expr1, expr2) => {
                 if expr.eval(frame) != 0 {
                     expr1.eval(frame)
                 } else {
@@ -55,7 +55,7 @@ impl Statement {
     fn pass() -> Output {
         Output::new()
     }
-    fn seq(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame) -> Output {
+    fn run_two(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame) -> Output {
         let out1 = stmt1.run(frame);
         // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
         let out2 = stmt2.run(frame);
@@ -68,15 +68,15 @@ impl Statement {
                 frame.set_variable(x.clone(), v);
                 Self::pass()
             }
-            Statement::While(expr, stmt) => {
+            Statement::DoWhile(expr, stmt) => {
                 let v = expr.eval(frame);
                 if v != 0 {
-                    Self::seq(stmt, self, frame)
+                    Self::run_two(stmt, self, frame)
                 } else {
                     Self::pass()
                 }
             }
-            Statement::Seq(stmt1, stmt2) => Self::seq(stmt1, stmt2, frame),
+            Statement::Seq(stmt1, stmt2) => Self::run_two(stmt1, stmt2, frame),
             Statement::Print(expr) => {
                 let v = expr.eval(frame);
                 Output::print(format!("{v}"))
@@ -102,7 +102,7 @@ mod tests {
         let frame = new_frame(vec![("x", 7)]);
         let expr = Expr::BinOp(
             BinOp::Mul,
-            Box::new(Expr::Const(6)),
+            Box::new(Expr::Constant(6)),
             Box::new(Expr::Var(String::from("x"))),
         );
         let result = expr.eval(&frame);
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn countdown_statement() {
         let mut frame = new_frame(vec![("x", 10)]);
-        let stmt = Statement::While(
+        let stmt = Statement::DoWhile(
             Expr::Var(String::from("x")),
             Box::new(Statement::Seq(
                 Box::new(Statement::Print(Expr::Var(String::from("x")))),
@@ -121,7 +121,7 @@ mod tests {
                     Expr::BinOp(
                         BinOp::Sub,
                         Box::new(Expr::Var(String::from("x"))),
-                        Box::new(Expr::Const(1)),
+                        Box::new(Expr::Constant(1)),
                     ),
                 )),
             )),
