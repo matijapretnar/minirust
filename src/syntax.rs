@@ -60,17 +60,6 @@ pub enum Statement {
     Seq(Box<Statement>, Box<Statement>),
     Print(Expr),
 }
-
-impl fmt::Display for Statement {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Assign(x, expr) => write!(f, "LET {x} = {expr}"),
-            Self::DoWhile(expr, stmt) => write!(f, "WHILE {expr} {{\n{stmt}\n}}"),
-            Self::Seq(stmt1, stmt2) => write!(f, "{stmt1};\n{stmt2}"),
-            Self::Print(expr) => write!(f, "PRINT {expr}"),
-        }
-    }
-}
 impl Statement {
     pub fn assign(x: &str, expr: Expr) -> Self {
         Self::Assign(String::from(x), expr)
@@ -124,5 +113,66 @@ impl Statement {
                 ),
             ),
         )
+    }
+}
+
+struct FormattedStatement<'a> {
+    statement: &'a Statement,
+    indent: u8,
+}
+impl FormattedStatement<'_> {
+    fn write_indent(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for _ in 1..=self.indent {
+            write!(f, " ")?;
+        }
+        Ok(())
+    }
+}
+impl fmt::Display for FormattedStatement<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.statement {
+            Statement::Assign(x, expr) => {
+                self.write_indent(f)?;
+                write!(f, "LET {x} = {expr}")
+            }
+            Statement::DoWhile(expr, stmt) => {
+                self.write_indent(f)?;
+                write!(f, "WHILE {expr} {{\n")?;
+                let fstmt = Self {
+                    statement: stmt,
+                    indent: self.indent + 2,
+                };
+                write!(f, "{fstmt}\n")?;
+                self.write_indent(f)?;
+                write!(f, "}}")?;
+                Ok(())
+            }
+            Statement::Seq(stmt1, stmt2) => {
+                let fstmt1 = Self {
+                    statement: stmt1,
+                    indent: self.indent,
+                };
+                let fstmt2 = Self {
+                    statement: stmt2,
+                    indent: self.indent,
+                };
+                write!(f, "{fstmt1};\n{fstmt2}")?;
+                Ok(())
+            }
+            Statement::Print(expr) => {
+                self.write_indent(f)?;
+                write!(f, "PRINT {expr}")
+            }
+        }
+    }
+}
+
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let fstmt = FormattedStatement {
+            statement: &self,
+            indent: 0,
+        };
+        write!(f, "{fstmt}")
     }
 }
