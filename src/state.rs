@@ -1,7 +1,17 @@
 use std::collections::HashMap;
+use std::fmt;
 
 pub struct StackFrame {
     variables: HashMap<String, i32>,
+}
+
+impl fmt::Display for StackFrame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (x, v) in &self.variables {
+            write!(f, "{x}: {v}\n")?;
+        }
+        Ok(())
+    }
 }
 
 impl StackFrame {

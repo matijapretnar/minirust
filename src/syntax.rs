@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub enum BinOp {
     Add,
     Sub,
@@ -5,12 +7,35 @@ pub enum BinOp {
     Div,
     Mod,
 }
+impl fmt::Display for BinOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Add => write!(f, "+"),
+            Self::Sub => write!(f, "-"),
+            Self::Mul => write!(f, "*"),
+            Self::Div => write!(f, "/"),
+            Self::Mod => write!(f, "%"),
+        }
+    }
+}
 
 pub enum Expr {
     Var(String),
     Constant(i32),
     IfThenElse(Box<Expr>, Box<Expr>, Box<Expr>),
     BinOp(BinOp, Box<Expr>, Box<Expr>),
+}
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Var(x) => write!(f, "{x}"),
+            Self::Constant(n) => write!(f, "{n}"),
+            Self::IfThenElse(expr, expr1, expr2) => {
+                write!(f, "IF {expr} THEN {expr1} ELSE {expr2}")
+            }
+            Self::BinOp(op, expr1, expr2) => write!(f, "{expr1} {op} {expr2}"),
+        }
+    }
 }
 impl Expr {
     pub fn var(x: &str) -> Self {
@@ -36,6 +61,16 @@ pub enum Statement {
     Print(Expr),
 }
 
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Assign(x, expr) => write!(f, "LET {x} = {expr}"),
+            Self::DoWhile(expr, stmt) => write!(f, "WHILE {expr} {{\n{stmt}\n}}"),
+            Self::Seq(stmt1, stmt2) => write!(f, "{stmt1};\n{stmt2}"),
+            Self::Print(expr) => write!(f, "PRINT {expr}"),
+        }
+    }
+}
 impl Statement {
     pub fn assign(x: &str, expr: Expr) -> Self {
         Self::Assign(String::from(x), expr)
