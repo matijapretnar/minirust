@@ -55,13 +55,15 @@ impl Statement {
     fn pass() -> Output {
         Output::new()
     }
-    fn run_two(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame) -> Output {
-        let out1 = stmt1.run(frame);
+    fn run_two(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame, whole: &Statement) -> Output {
+        let out1 = stmt1.run(frame, whole);
         // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
-        let out2 = stmt2.run(frame);
+        let out2 = stmt2.run(frame, whole);
         out1.join(out2)
     }
-    pub fn run(&self, frame: &mut crate::state::StackFrame) -> Output {
+    pub fn run(&self, frame: &mut crate::state::StackFrame, whole: &Statement) -> Output {
+        whole.print_active(self);
+        println!("{frame}");
         match self {
             Statement::Assign(x, expr) => {
                 let v = expr.eval(frame);
@@ -71,12 +73,12 @@ impl Statement {
             Statement::DoWhile(expr, stmt) => {
                 let v = expr.eval(frame);
                 if v != 0 {
-                    Self::run_two(stmt, self, frame)
+                    Self::run_two(stmt, self, frame, whole)
                 } else {
                     Self::pass()
                 }
             }
-            Statement::Seq(stmt1, stmt2) => Self::run_two(stmt1, stmt2, frame),
+            Statement::Seq(stmt1, stmt2) => Self::run_two(stmt1, stmt2, frame, whole),
             Statement::Print(expr) => {
                 let v = expr.eval(frame);
                 Output::print(format!("{v}"))
@@ -126,7 +128,7 @@ mod tests {
                 )),
             )),
         );
-        let output = stmt.run(&mut frame);
+        let output = stmt.run(&mut frame, &stmt);
         assert_eq!(
             output.printouts,
             vec!["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]

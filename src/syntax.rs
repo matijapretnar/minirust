@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ptr;
 
 pub enum BinOp {
     Add,
@@ -118,6 +119,7 @@ impl Statement {
 
 struct FormattedStatement<'a> {
     statement: &'a Statement,
+    active: Option<&'a Statement>,
     indent: u8,
 }
 impl FormattedStatement<'_> {
@@ -127,9 +129,18 @@ impl FormattedStatement<'_> {
         }
         Ok(())
     }
+    fn is_active(&self) -> bool {
+        match self.active {
+            Some(active) => ptr::eq(self.statement, active),
+            None => false,
+        }
+    }
 }
 impl fmt::Display for FormattedStatement<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_active() {
+            write!(f, ">>>")?;
+        }
         match self.statement {
             Statement::Assign(x, expr) => {
                 self.write_indent(f)?;
@@ -140,7 +151,8 @@ impl fmt::Display for FormattedStatement<'_> {
                 write!(f, "WHILE {expr} {{\n")?;
                 let fstmt = Self {
                     statement: stmt,
-                    indent: self.indent + 2,
+                    active: self.active,
+                    indent: self.indent + 2
                 };
                 write!(f, "{fstmt}\n")?;
                 self.write_indent(f)?;
@@ -148,14 +160,8 @@ impl fmt::Display for FormattedStatement<'_> {
                 Ok(())
             }
             Statement::Seq(stmt1, stmt2) => {
-                let fstmt1 = Self {
-                    statement: stmt1,
-                    indent: self.indent,
-                };
-                let fstmt2 = Self {
-                    statement: stmt2,
-                    indent: self.indent,
-                };
+                let fstmt1 = Self {statement: stmt1, active: self.active, indent: self.indent};
+                let fstmt2 = Self {statement: stmt2, active: self.active, indent: self.indent};
                 write!(f, "{fstmt1};\n{fstmt2}")?;
                 Ok(())
             }
@@ -171,8 +177,19 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let fstmt = FormattedStatement {
             statement: &self,
+            active: None,
             indent: 0,
         };
         write!(f, "{fstmt}")
+    }
+}
+impl Statement {
+    pub fn print_active(&self, active: &Statement) {
+        let fstmt = FormattedStatement {
+            statement: &self,
+            active: Some(active),
+            indent: 0,
+        };
+        println!("{fstmt}");
     }
 }
