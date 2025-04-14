@@ -68,14 +68,12 @@ impl Statement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{StackFrame, State};
+    use crate::State;
 
     #[test]
     fn answer_expression() {
-        let state = State {
-            frame: StackFrame::from_bindings(vec![("x", 7)]),
-            changes: Vec::new(),
-        };
+        let mut state = State::new();
+        state.set_variable(String::from("x"), 7);
         let expr = Expr::BinOp(
             BinOp::Mul,
             Box::new(Expr::Constant(6)),
@@ -87,10 +85,8 @@ mod tests {
 
     #[test]
     fn countdown_statement() {
-        let mut state = State {
-            frame: StackFrame::from_bindings(vec![("x", 10)]),
-            changes: Vec::new(),
-        };
+        let mut state = State::new();
+        state.set_variable(String::from("x"), 10);
         let stmt = Statement::DoWhile(
             Expr::Var(String::from("x")),
             Box::new(Statement::Seq(

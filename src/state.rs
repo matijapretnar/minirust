@@ -45,8 +45,8 @@ pub enum Change {
 }
 
 pub struct State {
-    pub frame: StackFrame,
-    pub changes: Vec<Change>,
+    frame: StackFrame,
+    changes: Vec<Change>,
 }
 
 impl State {
@@ -74,5 +74,11 @@ impl State {
                 _ => None,
             })
             .collect()
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.frame.fmt(f)
     }
 }

@@ -6,5 +6,5 @@ fn main() {
     for msg in state.output() {
         println!("{msg}");
     }
-    println!("{}", state.frame);
+    println!("{state}");
 }
