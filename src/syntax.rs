@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Clone)]
 pub enum BinOp {
     Add,
     Sub,
@@ -19,11 +20,13 @@ impl fmt::Display for BinOp {
     }
 }
 
+#[derive(Clone)]
 pub enum Expr {
     Var(String),
     Constant(i32),
     IfThenElse(Box<Expr>, Box<Expr>, Box<Expr>),
     BinOp(BinOp, Box<Expr>, Box<Expr>),
+    Call(String, Vec<Expr>),
 }
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -34,6 +37,7 @@ impl fmt::Display for Expr {
                 write!(f, "IF {expr} THEN {expr1} ELSE {expr2}")
             }
             Self::BinOp(op, expr1, expr2) => write!(f, "{expr1} {op} {expr2}"),
+            Self::Call(fun, exprs) => write!(f, "{fun}(...)"),
         }
     }
 }
@@ -52,8 +56,13 @@ impl Expr {
     pub fn bin_op(op: BinOp, expr1: Expr, expr2: Expr) -> Self {
         Self::BinOp(op, Box::new(expr1), Box::new(expr2))
     }
+
+    pub fn call(fun: &str, exprs: Vec<Expr>) -> Self {
+        Self::Call(String::from(fun), exprs)
+    }
 }
 
+#[derive(Clone)]
 pub enum Statement {
     Assign(String, Expr),
     DoWhile(Expr, Box<Statement>),

@@ -30,38 +30,65 @@ impl StackFrame {
     pub fn set_variable(&mut self, x: String, v: i32) {
         self.variables.insert(x, v);
     }
-    pub fn from_bindings(bindings: Vec<(&str, i32)>) -> Self {
+    pub fn from_bindings(bindings: Vec<(&String, i32)>) -> Self {
         let mut frame = Self::new();
         for (x, v) in bindings {
-            frame.set_variable(String::from(x), v);
+            frame.set_variable(x.clone(), v);
         }
         frame
     }
 }
 
+#[derive(Clone)]
+pub struct Stack {
+    pub frames: Vec<StackFrame>,
+}
+
+impl Stack {
+    pub fn new() -> Self {
+        Stack { frames: vec![] }
+    }
+    pub fn read_variable(&self, x: &String) -> i32 {
+        self.frames.first().unwrap().read_variable(x)
+    }
+    pub fn set_variable(&mut self, x: String, v: i32) {
+        self.frames.first_mut().unwrap().set_variable(x, v);
+    }
+    pub fn push_frame(&mut self, frame: StackFrame) {
+        self.frames.push(frame)
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &StackFrame> {
+        self.frames.iter()
+    }
+}
+
 pub enum Change {
     Print(String),
-    Frame(StackFrame),
+    Stack(Stack),
 }
 
 pub struct State {
-    frame: StackFrame,
+    pub stack: Stack,
     changes: Vec<Change>,
+    pub functions: HashMap<String, (Vec<String>, crate::Statement)>,
 }
 
 impl State {
     pub fn new() -> Self {
+        let mut stack = Stack::new();
+        stack.push_frame(StackFrame::new());
         State {
-            frame: StackFrame::new(),
+            stack,
             changes: Vec::new(),
+            functions: HashMap::new(),
         }
     }
     pub fn read_variable(&self, x: &String) -> i32 {
-        self.frame.read_variable(x)
+        self.stack.read_variable(x)
     }
     pub fn set_variable(&mut self, x: String, v: i32) {
-        self.frame.set_variable(x, v);
-        self.changes.push(Change::Frame(self.frame.clone()))
+        self.stack.set_variable(x, v);
+        self.changes.push(Change::Stack(self.stack.clone()))
     }
     pub fn print(&mut self, msg: String) {
         self.changes.push(Change::Print(msg))
@@ -79,6 +106,6 @@ impl State {
 
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.frame.fmt(f)
+        self.stack.frames.first().unwrap().fmt(f)
     }
 }
