@@ -1,11 +1,10 @@
 fn main() {
-    let mut frame = minirust::StackFrame::new();
+    let mut state = minirust::State::new();
     let stmt = minirust::Statement::fibonacci(10);
-    println!("{frame}");
     println!("{stmt}");
-    let output = stmt.run(&mut frame);
-    for msg in output.printouts {
+    stmt.run(&mut state);
+    for msg in state.output {
         println!("{msg}");
     }
-    println!("{frame}");
+    println!("{}", state.frame);
 }

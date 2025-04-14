@@ -37,3 +37,26 @@ impl StackFrame {
         frame
     }
 }
+
+pub struct State {
+    pub frame: StackFrame,
+    pub output: Vec<String>,
+}
+
+impl State {
+    pub fn new() -> Self {
+        State {
+            frame: StackFrame::new(),
+            output: Vec::new(),
+        }
+    }
+    pub fn read_variable(&self, x: &String) -> i32 {
+        self.frame.read_variable(x)
+    }
+    pub fn set_variable(&mut self, x: String, v: i32) {
+        self.frame.set_variable(x, v);
+    }
+    pub fn print(&mut self, msg: String) {
+        self.output.push(msg)
+    }
+}

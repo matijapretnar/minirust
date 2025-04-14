@@ -1,27 +1,5 @@
 use crate::syntax::{BinOp, Expr, Statement};
 
-pub struct Output {
-    pub printouts: Vec<String>,
-}
-
-impl Output {
-    pub fn new() -> Self {
-        Output {
-            printouts: Vec::new(),
-        }
-    }
-    pub fn join(self, other: Self) -> Self {
-        let mut printouts = self.printouts;
-        printouts.extend(other.printouts);
-        Output { printouts }
-    }
-    pub fn print(output: String) -> Self {
-        Output {
-            printouts: vec![output],
-        }
-    }
-}
-
 impl BinOp {
     pub fn eval(&self, m: i32, n: i32) -> i32 {
         match self {
@@ -35,51 +13,43 @@ impl BinOp {
 }
 
 impl Expr {
-    pub fn eval(&self, frame: &crate::state::StackFrame) -> i32 {
+    pub fn eval(&self, state: &crate::state::State) -> i32 {
         match self {
-            Expr::Var(x) => frame.read_variable(x),
+            Expr::Var(x) => state.read_variable(x),
             Expr::Constant(n) => *n,
             Expr::IfThenElse(expr, expr1, expr2) => {
-                if expr.eval(frame) != 0 {
-                    expr1.eval(frame)
+                if expr.eval(state) != 0 {
+                    expr1.eval(state)
                 } else {
-                    expr2.eval(frame)
+                    expr2.eval(state)
                 }
             }
-            Expr::BinOp(op, expr1, expr2) => op.eval(expr1.eval(frame), expr2.eval(frame)),
+            Expr::BinOp(op, expr1, expr2) => op.eval(expr1.eval(state), expr2.eval(state)),
         }
     }
 }
 
 impl Statement {
-    fn pass() -> Output {
-        Output::new()
-    }
-    fn run_two(stmt1: &Self, stmt2: &Self, frame: &mut crate::state::StackFrame) -> Output {
-        let out1 = stmt1.run(frame);
-        // TODO: spremeni, če želiš "klikati" skozi izvajanje programa
-        let out2 = stmt2.run(frame);
-        out1.join(out2)
-    }
-    pub fn run(&self, frame: &mut crate::state::StackFrame) -> Output {
+    pub fn run(&self, state: &mut crate::state::State) {
         match self {
             Statement::Assign(x, expr) => {
-                let v = expr.eval(frame);
-                frame.set_variable(x.clone(), v);
-                Self::pass()
+                let v = expr.eval(state);
+                state.set_variable(x.clone(), v)
             }
             Statement::DoWhile(expr, stmt) => {
-                let v = expr.eval(frame);
+                let v = expr.eval(state);
                 if v != 0 {
-                    Self::run_two(stmt, self, frame)
-                } else {
-                    Self::pass()
+                    stmt.run(state);
+                    self.run(state)
                 }
             }
-            Statement::Seq(stmt1, stmt2) => Self::run_two(stmt1, stmt2, frame),
+            Statement::Seq(stmt1, stmt2) => {
+                stmt1.run(state);
+                stmt2.run(state)
+            }
             Statement::Print(expr) => {
-                let v = expr.eval(frame);
-                Output::print(format!("{v}"))
+                let v = expr.eval(state);
+                state.print(v.to_string())
             }
         }
     }
@@ -88,23 +58,29 @@ impl Statement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::StackFrame;
+    use crate::{StackFrame, State};
 
     #[test]
     fn answer_expression() {
-        let frame = StackFrame::from_bindings(vec![("x", 7)]);
+        let state = State {
+            frame: StackFrame::from_bindings(vec![("x", 7)]),
+            output: Vec::new(),
+        };
         let expr = Expr::BinOp(
             BinOp::Mul,
             Box::new(Expr::Constant(6)),
             Box::new(Expr::Var(String::from("x"))),
         );
-        let result = expr.eval(&frame);
+        let result = expr.eval(&state);
         assert_eq!(result, 42);
     }
 
     #[test]
     fn countdown_statement() {
-        let mut frame =  StackFrame::from_bindings(vec![("x", 10)]);
+        let mut state = State {
+            frame: StackFrame::from_bindings(vec![("x", 10)]),
+            output: Vec::new(),
+        };
         let stmt = Statement::DoWhile(
             Expr::Var(String::from("x")),
             Box::new(Statement::Seq(
@@ -119,9 +95,9 @@ mod tests {
                 )),
             )),
         );
-        let output = stmt.run(&mut frame);
+        stmt.run(&mut state);
         assert_eq!(
-            output.printouts,
+            state.output,
             vec!["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
         )
     }
