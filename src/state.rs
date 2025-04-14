@@ -102,6 +102,16 @@ impl State {
             })
             .collect()
     }
+    pub fn prepare_function(&mut self, fun: &String, vs: Vec<i32>) -> crate::Statement {
+        let (xs, stmt) = self.functions.get(fun).unwrap();
+        let stmt = stmt.clone();
+        let new_frame = crate::StackFrame::new();
+        self.stack.push_frame(new_frame);
+        for (x, v) in xs.iter().zip(vs) {
+            self.stack.set_variable(String::from(x), v);
+        }
+        stmt
+    }
 }
 
 impl fmt::Display for State {

@@ -26,18 +26,8 @@ impl Expr {
             }
             Expr::BinOp(op, expr1, expr2) => op.eval(expr1.eval(state), expr2.eval(state)),
             Expr::Call(fun, exprs) => {
-                let (xs, stmt) = state.functions.get(fun).unwrap();
-                let xs = xs.clone();
-                let stmt = stmt.clone();
-                let new_frame = crate::StackFrame::new();
-                let mut bindings = Vec::new();
-                for (x, expr) in xs.iter().zip(exprs.iter()) {
-                    let v = expr.eval(state);
-                    bindings.push((x.to_string(), v));
-                };
-                let mut new_stack = state.stack.clone();
-                new_stack.push_frame(new_frame);
-                state.stack = new_stack;
+                let vs = exprs.iter().map(|expr| expr.eval(state)).collect();
+                let stmt = state.prepare_function(fun, vs);
                 match stmt.run(state) {
                     None => 0,
                     Some(v) => v,
