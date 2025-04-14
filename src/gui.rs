@@ -2,6 +2,8 @@ use sauron::{
     html::text, html::units::px, jss, node, wasm_bindgen, Application, Cmd, Node, Program,
 };
 
+use crate::state;
+
 enum Msg {
     Increment,
     Decrement,
@@ -9,12 +11,19 @@ enum Msg {
 }
 
 struct App {
-    count: i32,
+    index: usize,
+    stacks: Vec<state::Stack>,
 }
 
 impl App {
     fn new() -> Self {
-        App { count: 0 }
+        let mut state = crate::State::new();
+        let stmt = crate::Statement::fibonacci(10);
+        stmt.run(&mut state);
+        App {
+            index: 0,
+            stacks: state.stacks(),
+        }
     }
 }
 
@@ -30,22 +39,31 @@ impl Application for App {
                         Msg::Increment
                     }
                 />
-                <button class="count" on_click=|_|{Msg::Reset} >{text(self.count)}</button>
+                <button class="count" on_click=|_|{Msg::Reset} >Reset</button>
                 <input type="button"
                     value="-"
                     on_click=|_| {
                         Msg::Decrement
                     }
                 />
+                <ul>
+                {
+                    for frame in self.stacks[self.index].frames.iter() {
+                        node! {
+                            <li> {text(frame)} </li>
+                        }
+                    }
+                }
+                </ul>
             </main>
         }
     }
 
     fn update(&mut self, msg: Msg) -> Cmd<Msg> {
         match msg {
-            Msg::Increment => self.count += 1,
-            Msg::Decrement => self.count -= 1,
-            Msg::Reset => self.count = 0,
+            Msg::Increment => self.index += 1,
+            Msg::Decrement => self.index -= 1,
+            Msg::Reset => self.index = 0,
         }
         Cmd::none()
     }

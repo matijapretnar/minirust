@@ -102,6 +102,15 @@ impl State {
             })
             .collect()
     }
+    pub fn stacks(&self) -> Vec<Stack> {
+        self.changes
+            .iter()
+            .filter_map(|change| match change {
+                Change::Stack(stack) => Some(stack.clone()),
+                _ => None,
+            })
+            .collect()
+    }
     pub fn prepare_function(&mut self, fun: &String, vs: Vec<i32>) -> crate::Statement {
         let (xs, stmt) = self.functions.get(fun).unwrap();
         let stmt = stmt.clone();
