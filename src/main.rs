@@ -3,7 +3,7 @@ fn main() {
     let stmt = minirust::Statement::fibonacci(10);
     println!("{stmt}");
     stmt.run(&mut state);
-    for msg in state.output {
+    for msg in state.output() {
         println!("{msg}");
     }
     println!("{}", state.frame);

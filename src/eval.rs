@@ -64,7 +64,7 @@ mod tests {
     fn answer_expression() {
         let state = State {
             frame: StackFrame::from_bindings(vec![("x", 7)]),
-            output: Vec::new(),
+            changes: Vec::new(),
         };
         let expr = Expr::BinOp(
             BinOp::Mul,
@@ -79,7 +79,7 @@ mod tests {
     fn countdown_statement() {
         let mut state = State {
             frame: StackFrame::from_bindings(vec![("x", 10)]),
-            output: Vec::new(),
+            changes: Vec::new(),
         };
         let stmt = Statement::DoWhile(
             Expr::Var(String::from("x")),
@@ -97,7 +97,7 @@ mod tests {
         );
         stmt.run(&mut state);
         assert_eq!(
-            state.output,
+            state.output(),
             vec!["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
         )
     }

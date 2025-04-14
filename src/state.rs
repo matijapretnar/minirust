@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct StackFrame {
     variables: HashMap<String, i32>,
 }
@@ -38,16 +39,21 @@ impl StackFrame {
     }
 }
 
+pub enum Change {
+    Print(String),
+    Frame(StackFrame),
+}
+
 pub struct State {
     pub frame: StackFrame,
-    pub output: Vec<String>,
+    pub changes: Vec<Change>,
 }
 
 impl State {
     pub fn new() -> Self {
         State {
             frame: StackFrame::new(),
-            output: Vec::new(),
+            changes: Vec::new(),
         }
     }
     pub fn read_variable(&self, x: &String) -> i32 {
@@ -55,8 +61,18 @@ impl State {
     }
     pub fn set_variable(&mut self, x: String, v: i32) {
         self.frame.set_variable(x, v);
+        self.changes.push(Change::Frame(self.frame.clone()))
     }
     pub fn print(&mut self, msg: String) {
-        self.output.push(msg)
+        self.changes.push(Change::Print(msg))
+    }
+    pub fn output(&self) -> Vec<String> {
+        self.changes
+            .iter()
+            .filter_map(|change| match change {
+                Change::Print(msg) => Some(msg.clone()),
+                _ => None,
+            })
+            .collect()
     }
 }
