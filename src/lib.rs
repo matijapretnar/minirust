@@ -4,4 +4,4 @@ mod state;
 mod syntax;
 
 pub use state::{StackFrame, State};
-pub use syntax::{Statement, Expr, BinOp};
+pub use syntax::{BinOp, Expr, Statement};
