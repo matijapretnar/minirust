@@ -88,18 +88,11 @@ impl Statement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::state;
+    use crate::StackFrame;
 
-    fn new_frame(bindings: Vec<(&str, i32)>) -> state::StackFrame {
-        let mut frame = state::StackFrame::new();
-        for (x, v) in bindings {
-            frame.set_variable(String::from(x), v);
-        }
-        frame
-    }
     #[test]
     fn answer_expression() {
-        let frame = new_frame(vec![("x", 7)]);
+        let frame = StackFrame::from_bindings(vec![("x", 7)]);
         let expr = Expr::BinOp(
             BinOp::Mul,
             Box::new(Expr::Constant(6)),
@@ -111,7 +104,7 @@ mod tests {
 
     #[test]
     fn countdown_statement() {
-        let mut frame = new_frame(vec![("x", 10)]);
+        let mut frame =  StackFrame::from_bindings(vec![("x", 10)]);
         let stmt = Statement::DoWhile(
             Expr::Var(String::from("x")),
             Box::new(Statement::Seq(

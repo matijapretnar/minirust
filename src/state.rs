@@ -29,4 +29,11 @@ impl StackFrame {
     pub fn set_variable(&mut self, x: String, v: i32) {
         self.variables.insert(x, v);
     }
+    pub fn from_bindings(bindings: Vec<(&str, i32)>) -> Self {
+        let mut frame = Self::new();
+        for (x, v) in bindings {
+            frame.set_variable(String::from(x), v);
+        }
+        frame
+    }
 }
