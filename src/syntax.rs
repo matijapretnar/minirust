@@ -59,6 +59,7 @@ pub enum Statement {
     DoWhile(Expr, Box<Statement>),
     Seq(Box<Statement>, Box<Statement>),
     Print(Expr),
+    Ret(Expr),
 }
 impl Statement {
     pub fn assign(x: &str, expr: Expr) -> Self {
@@ -72,6 +73,9 @@ impl Statement {
     }
     pub fn print(expr: Expr) -> Self {
         Self::Print(expr)
+    }
+    pub fn ret(expr: Expr) -> Self {
+        Self::Ret(expr)
     }
     pub fn fibonacci(n: i32) -> Self {
         Statement::seq(
@@ -162,6 +166,10 @@ impl fmt::Display for FormattedStatement<'_> {
             Statement::Print(expr) => {
                 self.write_indent(f)?;
                 write!(f, "PRINT {expr}")
+            }
+            Statement::Ret(expr) => {
+                self.write_indent(f)?;
+                write!(f, "RETURN {expr}")
             }
         }
     }

@@ -30,26 +30,36 @@ impl Expr {
 }
 
 impl Statement {
-    pub fn run(&self, state: &mut crate::state::State) {
+    fn run_two(stmt1: &Self, stmt2: &Self, state: &mut crate::state::State) -> Option<i32> {
+        match stmt1.run(state) {
+            None => stmt2.run(state),
+            Some(v) => Some(v),
+        }
+    }
+    pub fn run(&self, state: &mut crate::state::State) -> Option<i32> {
         match self {
             Statement::Assign(x, expr) => {
                 let v = expr.eval(state);
-                state.set_variable(x.clone(), v)
+                state.set_variable(x.clone(), v);
+                None
             }
             Statement::DoWhile(expr, stmt) => {
                 let v = expr.eval(state);
                 if v != 0 {
-                    stmt.run(state);
-                    self.run(state)
+                    Self::run_two(stmt, self, state)
+                } else {
+                    None
                 }
             }
-            Statement::Seq(stmt1, stmt2) => {
-                stmt1.run(state);
-                stmt2.run(state)
-            }
+            Statement::Seq(stmt1, stmt2) => Self::run_two(stmt1, stmt2, state),
             Statement::Print(expr) => {
                 let v = expr.eval(state);
-                state.print(v.to_string())
+                state.print(v.to_string());
+                None
+            }
+            Statement::Ret(expr) => {
+                let v: i32 = expr.eval(state);
+                Some(v)
             }
         }
     }
