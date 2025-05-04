@@ -73,7 +73,7 @@ pub enum Change {
 pub struct State {
     pub stack: Stack,
     changes: Vec<Change>,
-    pub functions: HashMap<String, (Vec<String>, crate::Statement)>,
+    pub functions: HashMap<String, crate::Function>,
 }
 
 impl State {
@@ -114,8 +114,13 @@ impl State {
             })
             .collect()
     }
-    pub fn prepare_function(&mut self, fun: &String, vs: Vec<i32>) -> crate::Statement {
-        let (xs, stmt) = self.functions.get(fun).unwrap();
+    pub fn add_function(&mut self, fun: crate::Function) {
+        self.functions.insert(fun.name.clone(), fun);
+    }
+    pub fn prepare_function(&mut self, fun_name: &String, vs: Vec<i32>) -> crate::Statement {
+        let fun = self.functions.get(fun_name).unwrap();
+        let xs = &fun.variables;
+        let stmt = &fun.body;
         let stmt = stmt.clone();
         let new_frame = crate::StackFrame::new();
         self.stack.push_frame(new_frame);

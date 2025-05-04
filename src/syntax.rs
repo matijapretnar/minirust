@@ -193,3 +193,35 @@ impl fmt::Display for Statement {
         write!(f, "{fstmt}")
     }
 }
+
+pub struct Function {
+    pub name: String,
+    pub variables: Vec<String>,
+    pub body: crate::Statement,
+}
+
+impl Function {
+    pub fn gcd() -> Self {
+        Self {
+            name: "gcd".to_string(),
+            variables: vec!["m".to_string(), "n".to_string()],
+            body: Statement::seq(
+                Statement::seq(
+                    Statement::print(Expr::var("m")),
+                    Statement::print(Expr::var("n")),
+                ),
+                Statement::ret(Expr::if_then_else(
+                    Expr::var("n"),
+                    Expr::call(
+                        "gcd",
+                        vec![
+                            Expr::var("n"),
+                            Expr::bin_op(BinOp::Mod, Expr::var("m"), Expr::var("n")),
+                        ],
+                    ),
+                    Expr::var("m"),
+                )),
+            ),
+        }
+    }
+}
