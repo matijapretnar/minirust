@@ -37,6 +37,9 @@ impl StackFrame {
         }
         frame
     }
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &i32)> {
+        self.variables.iter()
+    }
 }
 
 #[derive(Clone)]

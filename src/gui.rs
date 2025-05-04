@@ -32,30 +32,47 @@ impl Application for App {
 
     fn view(&self) -> Node<Msg> {
         node! {
-            <main>
-                <input type="button"
-                    value="+"
-                    on_click=|_| {
-                        Msg::Increment
-                    }
-                />
-                <button class="count" on_click=|_|{Msg::Reset} >Reset</button>
-                <input type="button"
-                    value="-"
-                    on_click=|_| {
-                        Msg::Decrement
-                    }
-                />
+            <section class="section">
+            <div class="container">
+              <div class="field has-addons">
+              <p class="control">
+              <button class="button" on_click=|_| { Msg::Reset }>
+                  <span>Reset</span>
+                </button>
+              </p>
+              <p class="control">
+                  <button class="button" on_click=|_| { Msg::Decrement }>
+                  <span>Step -</span>
+                </button>
+              </p>
+              <p class="control">
+                <button class="button" on_click=|_| { Msg::Increment }>
+                  <span>Step +</span>
+                </button>
+              </p>
+            </div>
                 <ul>
                 {
                     for frame in self.stacks[self.index].frames.iter() {
                         node! {
-                            <li> {text(frame)} </li>
+                            <div class="box">
+                            <table class="table is-fullwidth"> {
+                                for (x, v) in frame.iter() {
+                                    node! {
+                                    <tr>
+                                        <th>{ text(x) }</th>
+                                        <td>{ text(v) }</td>
+                                    </tr>}
+                                }
+                            }
+                            </table>
+                            </div>
                         }
                     }
                 }
                 </ul>
-            </main>
+        </div>
+          </section>
         }
     }
 
@@ -66,27 +83,6 @@ impl Application for App {
             Msg::Reset => self.index = 0,
         }
         Cmd::none()
-    }
-
-    fn stylesheet() -> Vec<String> {
-        vec![jss! {
-            "body":{
-                font_family: "verdana, arial, monospace",
-            },
-
-            "main":{
-                width: px(30),
-                height: px(100),
-                margin: "auto",
-                text_align: "center",
-            },
-
-            "input, .count":{
-                font_size: px(40),
-                padding: px(30),
-                margin: px(30),
-            }
-        }]
     }
 }
 
