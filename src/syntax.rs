@@ -116,40 +116,50 @@ pub enum Statement {
     Print(Expr),
     Ret(Expr),
 }
+
+#[macro_export]
+macro_rules! statement {
+    // Assignment: let x = expr
+    (let $var:ident = $e:tt) => {
+        $crate::Statement::Assign(stringify!($var).to_string(), expr!($e))
+    };
+
+    // Print: print expr
+    (print $e:tt) => {
+        $crate::Statement::Print(expr!($e))
+    };
+
+    // Return: return expr
+    (return $e:tt) => {
+        $crate::Statement::Ret(expr!($e))
+    };
+}
+
 impl Statement {
-    pub fn assign(x: &str, expr: Expr) -> Self {
-        Self::Assign(String::from(x), expr)
-    }
     pub fn do_while(expr: Expr, stmt: Statement) -> Self {
         Self::DoWhile(expr, Box::new(stmt))
     }
     pub fn seq(stmt1: Statement, stmt2: Statement) -> Self {
         Self::Seq(Box::new(stmt1), Box::new(stmt2))
     }
-    pub fn print(expr: Expr) -> Self {
-        Self::Print(expr)
-    }
-    pub fn ret(expr: Expr) -> Self {
-        Self::Ret(expr)
-    }
     pub fn fibonacci(n: i32) -> Self {
         Statement::seq(
-            Statement::assign("a", expr!(0)),
+            statement!(let a = 0),
             Statement::seq(
-                Statement::assign("b", expr!(1)),
+                statement!(let b = 1),
                 Statement::seq(
-                    Statement::assign("i", expr!(0)),
+                    statement!(let i = 0),
                     Statement::do_while(
                         expr!(i + { n }),
                         Statement::seq(
-                            Statement::print(expr!(a)),
+                            statement!(print a),
                             Statement::seq(
-                                Statement::assign("temp", expr!(a)),
+                                statement!(let temp = a),
                                 Statement::seq(
-                                    Statement::assign("a", expr!(b)),
+                                    statement!(let a = b),
                                     Statement::seq(
-                                        Statement::assign("b", expr!(temp + b)),
-                                        Statement::assign("i", expr!(i + 1)),
+                                        statement!(let b = (temp + b)),
+                                        statement!(let i = (i + 1)),
                                     ),
                                 ),
                             ),
@@ -238,8 +248,8 @@ impl Function {
             name: "gcd".to_string(),
             variables: vec!["m".to_string(), "n".to_string()],
             body: Statement::seq(
-                Statement::seq(Statement::print(expr!(m)), Statement::print(expr!(n))),
-                Statement::ret(Expr::if_then_else(
+                Statement::seq(statement!(print m), statement!(print n)),
+                Statement::Ret(Expr::if_then_else(
                     expr!(n),
                     Expr::call("gcd", vec![expr!(n), expr!(m % n)]),
                     expr!(m),
