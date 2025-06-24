@@ -31,20 +31,37 @@ pub enum Expr {
 
 #[macro_export]
 macro_rules! expr {
+    // Function calls
+    ($func:ident ( $($args:tt),* )) => {
+        $crate::Expr::Call(
+            stringify!($func).to_string(),
+            vec![$(expr!($args)),*]
+        )
+    };
+
     // MiniRust variable
     ($var:ident) => {
         $crate::Expr::Var(stringify!($var).to_string())
     };
 
     // Interpolated Rust variable
-    ({ $var:ident }) => {
-        $crate::Expr::Constant($var)
-    };
+    ({ $expr:expr }) => { $expr };
 
     // Integer literal
     ($n:literal) => {
         $crate::Expr::Constant($n)
     };
+
+    // If-then-else: if cond { then_branch } else { else_branch }
+    (if $cond:tt $then_branch:tt else $else_branch:tt) => {
+        $crate::Expr::IfThenElse(
+            Box::new(expr!($cond)),
+            Box::new(expr!($then_branch)),
+            Box::new(expr!($else_branch))
+        )
+    };
+
+    // Parentheses
     (($($inner:tt)*)) => { expr!($($inner)*) };
 
     // Binary operations, lowest precedence first
@@ -83,6 +100,8 @@ macro_rules! expr {
             Box::new(expr!($($rest)+))
         )
     };
+
+
 }
 
 impl fmt::Display for Expr {
@@ -98,15 +117,6 @@ impl fmt::Display for Expr {
         }
     }
 }
-impl Expr {
-    pub fn if_then_else(expr: Expr, expr1: Expr, expr2: Expr) -> Self {
-        Self::IfThenElse(Box::new(expr), Box::new(expr1), Box::new(expr2))
-    }
-
-    pub fn call(fun: &str, exprs: Vec<Expr>) -> Self {
-        Self::Call(String::from(fun), exprs)
-    }
-}
 
 #[derive(Clone)]
 pub enum Statement {
@@ -119,6 +129,17 @@ pub enum Statement {
 
 #[macro_export]
 macro_rules! statement {
+    // Sequence of statements separated by ;
+    (($($inner:tt)*)) => { statement!($($inner)*) };
+    ({$($inner:tt)*}) => { statement!($($inner)*) };
+
+    ($first:tt ; $($rest:tt)+) => {
+        $crate::Statement::Seq(
+            Box::new(statement!($first)),
+            Box::new(statement!($($rest)+))
+        )
+    };
+
     // Assignment: let x = expr
     (let $var:ident = $e:tt) => {
         $crate::Statement::Assign(stringify!($var).to_string(), expr!($e))
@@ -133,40 +154,29 @@ macro_rules! statement {
     (return $e:tt) => {
         $crate::Statement::Ret(expr!($e))
     };
+
+    // DoWhile: while expr { body }
+    (while $cond:tt $body:tt) => {
+        $crate::Statement::DoWhile(
+            expr!($cond),
+            Box::new(statement!($body))
+        )
+    };
 }
 
 impl Statement {
-    pub fn do_while(expr: Expr, stmt: Statement) -> Self {
-        Self::DoWhile(expr, Box::new(stmt))
-    }
-    pub fn seq(stmt1: Statement, stmt2: Statement) -> Self {
-        Self::Seq(Box::new(stmt1), Box::new(stmt2))
-    }
     pub fn fibonacci(n: i32) -> Self {
-        Statement::seq(
-            statement!(let a = 0),
-            Statement::seq(
-                statement!(let b = 1),
-                Statement::seq(
-                    statement!(let i = 0),
-                    Statement::do_while(
-                        expr!(i + { n }),
-                        Statement::seq(
-                            statement!(print a),
-                            Statement::seq(
-                                statement!(let temp = a),
-                                Statement::seq(
-                                    statement!(let a = b),
-                                    Statement::seq(
-                                        statement!(let b = (temp + b)),
-                                        statement!(let i = (i + 1)),
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
+        statement!(
+            (let a = 0);
+            (let b = 1);
+            (let i = 0);
+            while (i + { Expr::Constant(n) }) {
+                (print a) ;
+                (let temp = a) ;
+                (let a = b) ;
+                (let b = (temp + b)) ;
+                (let i = (i + 1))
+            }
         )
     }
 }
@@ -247,14 +257,11 @@ impl Function {
         Self {
             name: "gcd".to_string(),
             variables: vec!["m".to_string(), "n".to_string()],
-            body: Statement::seq(
-                Statement::seq(statement!(print m), statement!(print n)),
-                Statement::Ret(Expr::if_then_else(
-                    expr!(n),
-                    Expr::call("gcd", vec![expr!(n), expr!(m % n)]),
-                    expr!(m),
-                )),
-            ),
+            body: statement! {
+                (print m);
+                (print n);
+                (return (if n (gcd(n, (m % n))) else m))
+            },
         }
     }
 }
