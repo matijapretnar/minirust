@@ -37,7 +37,7 @@ impl fmt::Display for Expr {
                 write!(f, "IF {expr} THEN {expr1} ELSE {expr2}")
             }
             Self::BinOp(op, expr1, expr2) => write!(f, "{expr1} {op} {expr2}"),
-            Self::Call(fun, exprs) => write!(f, "{fun}(...)"),
+            Self::Call(fun, _exprs) => write!(f, "{fun}(...)"),
         }
     }
 }
