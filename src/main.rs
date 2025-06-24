@@ -1,11 +1,8 @@
-use minirust::{Expr, Function, Statement};
+use minirust::{expr, Expr, Function, Statement};
 
 fn main() {
     let mut state = minirust::State::new();
-    let stmt = Statement::print(Expr::call(
-        "gcd",
-        vec![Expr::constant(42), Expr::constant(15)],
-    ));
+    let stmt = Statement::print(Expr::call("gcd", vec![expr!(42), expr!(15)]));
     state.add_function(Function::gcd());
     println!("{stmt}");
     stmt.run(&mut state);

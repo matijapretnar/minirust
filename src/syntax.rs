@@ -28,6 +28,63 @@ pub enum Expr {
     BinOp(BinOp, Box<Expr>, Box<Expr>),
     Call(String, Vec<Expr>),
 }
+
+#[macro_export]
+macro_rules! expr {
+    // MiniRust variable
+    ($var:ident) => {
+        $crate::Expr::Var(stringify!($var).to_string())
+    };
+
+    // Interpolated Rust variable
+    ({ $var:ident }) => {
+        $crate::Expr::Constant($var)
+    };
+
+    // Integer literal
+    ($n:literal) => {
+        $crate::Expr::Constant($n)
+    };
+    (($($inner:tt)*)) => { expr!($($inner)*) };
+
+    // Binary operations, lowest precedence first
+    ($left:tt + $($rest:tt)+) => {
+        $crate::Expr::BinOp(
+            $crate::BinOp::Add,
+            Box::new(expr!($left)),
+            Box::new(expr!($($rest)+))
+        )
+    };
+    ($left:tt - $($rest:tt)+) => {
+        $crate::Expr::BinOp(
+            $crate::BinOp::Sub,
+            Box::new(expr!($left)),
+            Box::new(expr!($($rest)+))
+        )
+    };
+    ($left:tt * $($rest:tt)+) => {
+        $crate::Expr::BinOp(
+            $crate::BinOp::Mul,
+            Box::new(expr!($left)),
+            Box::new(expr!($($rest)+))
+        )
+    };
+    ($left:tt / $($rest:tt)+) => {
+        $crate::Expr::BinOp(
+            $crate::BinOp::Div,
+            Box::new(expr!($left)),
+            Box::new(expr!($($rest)+))
+        )
+    };
+    ($left:tt % $($rest:tt)+) => {
+        $crate::Expr::BinOp(
+            $crate::BinOp::Mod,
+            Box::new(expr!($left)),
+            Box::new(expr!($($rest)+))
+        )
+    };
+}
+
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -42,19 +99,8 @@ impl fmt::Display for Expr {
     }
 }
 impl Expr {
-    pub fn var(x: &str) -> Self {
-        Self::Var(String::from(x))
-    }
-    pub fn constant(v: i32) -> Self {
-        Self::Constant(v)
-    }
-
     pub fn if_then_else(expr: Expr, expr1: Expr, expr2: Expr) -> Self {
         Self::IfThenElse(Box::new(expr), Box::new(expr1), Box::new(expr2))
-    }
-
-    pub fn bin_op(op: BinOp, expr1: Expr, expr2: Expr) -> Self {
-        Self::BinOp(op, Box::new(expr1), Box::new(expr2))
     }
 
     pub fn call(fun: &str, exprs: Vec<Expr>) -> Self {
@@ -88,36 +134,22 @@ impl Statement {
     }
     pub fn fibonacci(n: i32) -> Self {
         Statement::seq(
-            Statement::assign("a", Expr::constant(0)),
+            Statement::assign("a", expr!(0)),
             Statement::seq(
-                Statement::assign("b", Expr::constant(1)),
+                Statement::assign("b", expr!(1)),
                 Statement::seq(
-                    Statement::assign("i", Expr::constant(0)),
+                    Statement::assign("i", expr!(0)),
                     Statement::do_while(
-                        Expr::bin_op(BinOp::Sub, Expr::var("i"), Expr::constant(n)),
+                        expr!(i + { n }),
                         Statement::seq(
-                            Statement::print(Expr::var("a")),
+                            Statement::print(expr!(a)),
                             Statement::seq(
-                                Statement::assign("temp", Expr::var("a")),
+                                Statement::assign("temp", expr!(a)),
                                 Statement::seq(
-                                    Statement::assign("a", Expr::var("b")),
+                                    Statement::assign("a", expr!(b)),
                                     Statement::seq(
-                                        Statement::assign(
-                                            "b",
-                                            Expr::bin_op(
-                                                BinOp::Add,
-                                                Expr::var("temp"),
-                                                Expr::var("b"),
-                                            ),
-                                        ),
-                                        Statement::assign(
-                                            "i",
-                                            Expr::bin_op(
-                                                BinOp::Add,
-                                                Expr::var("i"),
-                                                Expr::constant(1),
-                                            ),
-                                        ),
+                                        Statement::assign("b", expr!(temp + b)),
+                                        Statement::assign("i", expr!(i + 1)),
                                     ),
                                 ),
                             ),
@@ -206,20 +238,11 @@ impl Function {
             name: "gcd".to_string(),
             variables: vec!["m".to_string(), "n".to_string()],
             body: Statement::seq(
-                Statement::seq(
-                    Statement::print(Expr::var("m")),
-                    Statement::print(Expr::var("n")),
-                ),
+                Statement::seq(Statement::print(expr!(m)), Statement::print(expr!(n))),
                 Statement::ret(Expr::if_then_else(
-                    Expr::var("n"),
-                    Expr::call(
-                        "gcd",
-                        vec![
-                            Expr::var("n"),
-                            Expr::bin_op(BinOp::Mod, Expr::var("m"), Expr::var("n")),
-                        ],
-                    ),
-                    Expr::var("m"),
+                    expr!(n),
+                    Expr::call("gcd", vec![expr!(n), expr!(m % n)]),
+                    expr!(m),
                 )),
             ),
         }
